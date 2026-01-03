@@ -217,7 +217,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'ummah-academy-app-v2';
@@ -253,7 +253,6 @@
                     currentUser = user;
                     if(user) {
                         hideLoading();
-                        // Trigger check if date was already picked
                         const dateVal = document.getElementById('targetDate').value;
                         if(dateVal) window.checkAvailability();
                     }
@@ -350,10 +349,10 @@
 
         window.completeTransaction = async () => {
             const btn = document.getElementById('payConfirmBtn');
-            if(!currentUser) return showToast("يرجى الانتظار، جاري الربط مع الخادم...");
+            if(!currentUser || !db) return showToast("يرجى الانتظار، جاري الربط مع الخادم...");
 
             btn.disabled = true;
-            btn.innerText = "جاري المعالجة...";
+            btn.innerText = "جاري الحفظ...";
             
             try {
                 if(pendingAction === 'booking'){
@@ -386,29 +385,28 @@
                 
             } catch (e) {
                 console.error(e);
-                showToast("حدث خطأ في الشبكة، يرجى المحاولة لاحقاً");
+                showToast("حدث خطأ، تأكد من اتصالك بالإنترنت");
             } finally {
                 btn.disabled = false;
                 btn.innerText = "تأكيد الدفع";
             }
         };
 
-        window.checkAvailability = async () => {
+        window.checkAvailability = () => {
             const dateInput = document.getElementById('targetDate').value;
             const grid = document.getElementById('timeGrid');
             if(!dateInput) return;
             
-            // Show loading instantly
             grid.innerHTML = '<p class="col-span-2 text-center py-4 text-indigo-500 animate-pulse">جاري فحص المواعيد...</p>';
             
-            // If Firebase or User is not ready, wait and retry
             if(!db || !currentUser) {
-                setTimeout(window.checkAvailability, 800);
+                setTimeout(window.checkAvailability, 1000);
                 return;
             }
 
-            try {
-                const snap = await getDocs(getBookingCol());
+            // Use onSnapshot for real-time and more reliable connection on GitHub Pages
+            const q = query(getBookingCol());
+            onSnapshot(q, (snap) => {
                 const bookedTimes = [];
                 snap.forEach(doc => {
                     const data = doc.data();
@@ -435,14 +433,10 @@
                     }
                     grid.appendChild(btn);
                 });
-                
-                if (grid.innerHTML === '') {
-                    grid.innerHTML = '<p class="col-span-2 text-slate-400 text-center py-4">لا توجد ساعات مسجلة لهذا اليوم</p>';
-                }
-            } catch (e) {
-                console.error("Availability Check Error:", e);
-                grid.innerHTML = '<p class="col-span-2 text-red-500 text-center py-4">فشل الاتصال، يرجى إعادة المحاولة</p>';
-            }
+            }, (error) => {
+                console.error("Listener Error:", error);
+                grid.innerHTML = '<p class="col-span-2 text-red-500 text-center py-4">فشل جلب البيانات، يرجى تحديث الصفحة</p>';
+            });
         };
 
     </script>
