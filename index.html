@@ -217,7 +217,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'ummah-academy-app-v2';
@@ -254,18 +254,19 @@
                     if(user) {
                         hideLoading();
                         // Trigger check if date was already picked
-                        if(document.getElementById('targetDate').value) window.checkAvailability();
+                        const dateVal = document.getElementById('targetDate').value;
+                        if(dateVal) window.checkAvailability();
                     }
                 });
 
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
+                    await signInWithCustomToken(auth, __initial_auth_token).catch(() => signInAnonymously(auth));
                 } else {
                     await signInAnonymously(auth);
                 }
 
             } catch (error) {
-                console.error("Firebase Error:", error);
+                console.error("Firebase Initialization Error:", error);
                 hideLoading();
             }
         };
@@ -366,6 +367,7 @@
                     });
                     showToast("تم الحجز والدفع بنجاح!");
                     document.getElementById('resName').value = "";
+                    selectedTime = null;
                 } else if(pendingAction === 'player'){
                     await addDoc(getPlayerCol(), {
                         name: document.getElementById('playerName').value,
@@ -399,9 +401,9 @@
             // Show loading instantly
             grid.innerHTML = '<p class="col-span-2 text-center py-4 text-indigo-500 animate-pulse">جاري فحص المواعيد...</p>';
             
-            // If auth is not ready yet, just wait 1 second and retry silently
-            if(!currentUser) {
-                setTimeout(window.checkAvailability, 1000);
+            // If Firebase or User is not ready, wait and retry
+            if(!db || !currentUser) {
+                setTimeout(window.checkAvailability, 800);
                 return;
             }
 
@@ -433,10 +435,13 @@
                     }
                     grid.appendChild(btn);
                 });
+                
+                if (grid.innerHTML === '') {
+                    grid.innerHTML = '<p class="col-span-2 text-slate-400 text-center py-4">لا توجد ساعات مسجلة لهذا اليوم</p>';
+                }
             } catch (e) {
-                console.error("Fetch error:", e);
-                // On error, try one more time after a short delay
-                setTimeout(window.checkAvailability, 2000);
+                console.error("Availability Check Error:", e);
+                grid.innerHTML = '<p class="col-span-2 text-red-500 text-center py-4">فشل الاتصال، يرجى إعادة المحاولة</p>';
             }
         };
 
