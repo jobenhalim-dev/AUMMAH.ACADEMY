@@ -9,16 +9,32 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Cairo', sans-serif; scroll-behavior: smooth; }
-        .hero-gradient { background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80'); background-size: cover; background-position: center; }
+        .hero-gradient { 
+            background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80'); 
+            background-size: cover; 
+            background-position: center; 
+        }
         .loading-spinner { border-top-color: #ef4444; animation: spinner 0.6s linear infinite; }
         @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
         .logo-container { width: 65px; height: 65px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 9999px; background: white; }
         .logo-img { height: 100%; width: 100%; object-fit: cover; }
-        .slot-available { background: #f0fdf4; color: #166534; border: 1px solid #bcf0da; cursor: pointer; }
-        .slot-booked { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; cursor: not-allowed; opacity: 0.6; }
-        .slot-selected { background: #4338ca !important; color: white !important; border-color: #4338ca !important; }
-        .admin-modal { background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); }
-        .payment-modal { background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); }
+        
+        .slot-available { background: #f0fdf4; color: #166534; border: 1px solid #bcf0da; cursor: pointer; transition: all 0.2s; }
+        .slot-available:hover { background: #dcfce7; transform: translateY(-2px); }
+        .slot-booked { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; cursor: not-allowed; opacity: 0.7; }
+        .slot-selected { background: #4338ca !important; color: white !important; border-color: #4338ca !important; transform: scale(1.05); }
+        
+        .admin-modal, .payment-modal { background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); }
+        .booking-section h3 { font-weight: 900; color: #1e1b4b; margin-bottom: 1.5rem; border-right: 4px solid #ef4444; padding-right: 10px; }
+        
+        .slots-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+        @media (min-width: 640px) { .slots-grid { grid-template-columns: repeat(3, 1fr); } }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #4338ca; border-radius: 10px; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -42,16 +58,16 @@
                 </div>
             </div>
             <div class="hidden md:flex space-x-6 space-x-reverse font-bold text-sm">
-                <a href="#home" class="hover:text-red-600">الرئيسية</a>
-                <a href="#booking" class="hover:text-red-600">حجز الملعب</a>
-                <a href="#academy" class="hover:text-red-600">تسجيل لاعب</a>
-                <a href="#archive" class="hover:text-red-600">الأرشيف</a>
+                <a href="#home" class="hover:text-red-600 transition">الرئيسية</a>
+                <a href="#booking" class="hover:text-red-600 transition">حجز الملعب</a>
+                <a href="#academy" class="hover:text-red-600 transition">تسجيل لاعب</a>
+                <a href="#archive" class="hover:text-red-600 transition">الأرشيف</a>
             </div>
             <div class="flex items-center gap-4">
                 <button onclick="toggleAdminModal(true)" class="text-slate-400 hover:text-indigo-900 transition-colors">
                     <i class="fas fa-user-shield text-xl"></i>
                 </button>
-                <button onclick="document.getElementById('booking').scrollIntoView()" class="bg-indigo-900 text-white px-6 py-2 rounded-xl font-bold text-sm">احجز الآن</button>
+                <button onclick="document.getElementById('booking').scrollIntoView()" class="bg-indigo-900 text-white px-6 py-2 rounded-xl font-bold text-sm hover:bg-indigo-800 transition">احجز الآن</button>
             </div>
         </div>
     </nav>
@@ -69,9 +85,9 @@
                 <h3 class="text-2xl font-black text-indigo-900">دخول الإدارة</h3>
             </div>
             <div class="space-y-4">
-                <input type="text" id="adminUser" placeholder="اسم المستخدم" class="w-full px-4 py-4 rounded-xl border bg-slate-50 outline-none">
-                <input type="password" id="adminPass" placeholder="كلمة المرور" class="w-full px-4 py-4 rounded-xl border bg-slate-50 outline-none">
-                <button onclick="window.handleAdminLogin()" class="w-full bg-indigo-900 text-white py-4 rounded-xl font-bold text-lg">دخول</button>
+                <input type="text" id="adminUser" placeholder="اسم المستخدم" class="w-full px-4 py-4 rounded-xl border bg-slate-50 outline-none focus:ring-2 ring-indigo-500">
+                <input type="password" id="adminPass" placeholder="كلمة المرور" class="w-full px-4 py-4 rounded-xl border bg-slate-50 outline-none focus:ring-2 ring-indigo-500">
+                <button id="adminLoginBtn" class="w-full bg-indigo-900 text-white py-4 rounded-xl font-bold text-lg hover:bg-indigo-800 transition">دخول</button>
             </div>
         </div>
     </div>
@@ -79,19 +95,22 @@
     <!-- Admin Dashboard -->
     <div id="adminDashboard" class="fixed inset-0 z-[200] bg-slate-100 hidden overflow-y-auto pb-20">
         <div class="container mx-auto px-4 py-8 max-w-6xl">
-            <div class="flex justify-between items-center mb-8 bg-white p-6 rounded-2xl shadow-sm">
+            <div class="flex justify-between items-center mb-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                 <h2 class="text-2xl font-black text-indigo-900">لوحة التحكم</h2>
-                <button onclick="logoutAdmin()" class="bg-red-500 text-white px-6 py-2 rounded-xl font-bold">خروج</button>
+                <button onclick="logoutAdmin()" class="bg-red-500 text-white px-6 py-2 rounded-xl font-bold hover:bg-red-600 transition">خروج</button>
             </div>
-            
             <div class="grid lg:grid-cols-2 gap-8">
-                <div class="bg-white p-6 rounded-2xl border">
-                    <h3 class="font-black mb-4 text-indigo-900 border-b pb-2">حجوزات الملعب</h3>
-                    <div id="adminBookingContent" class="space-y-3 text-right"></div>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="font-black mb-4 text-indigo-900 border-b pb-2 flex items-center">
+                        <i class="fas fa-calendar-alt ml-2"></i> حجوزات الملعب
+                    </h3>
+                    <div id="adminBookingContent" class="space-y-3 max-h-[500px] overflow-y-auto pr-2"></div>
                 </div>
-                <div class="bg-white p-6 rounded-2xl border">
-                    <h3 class="font-black mb-4 text-green-700 border-b pb-2">اللاعبين المشتركين</h3>
-                    <div id="adminPlayerContent" class="space-y-3 text-right"></div>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="font-black mb-4 text-green-700 border-b pb-2 flex items-center">
+                        <i class="fas fa-users ml-2"></i> اللاعبين المشتركين
+                    </h3>
+                    <div id="adminPlayerContent" class="space-y-3 max-h-[500px] overflow-y-auto pr-2"></div>
                 </div>
             </div>
         </div>
@@ -105,7 +124,6 @@
             </div>
             <h3 class="text-2xl font-black text-indigo-900 mb-2">بوابة الدفع المصرفي</h3>
             <p class="text-slate-500 mb-6 text-sm">أدخل بيانات البطاقة لإتمام العملية بأمان</p>
-            
             <div class="space-y-4 text-right">
                 <div>
                     <label class="text-xs font-bold text-slate-400 mr-2">رقم البطاقة</label>
@@ -121,49 +139,64 @@
                         <input type="password" id="cardCvv" placeholder="***" class="w-full p-4 rounded-xl border bg-slate-50 text-center">
                     </div>
                 </div>
-                <button id="payConfirmBtn" onclick="window.completeTransaction()" class="w-full bg-green-600 text-white py-5 rounded-2xl font-black text-xl shadow-lg mt-4 disabled:bg-slate-300">تأكيد الدفع</button>
-                <button onclick="togglePaymentModal(false)" class="w-full text-slate-400 font-bold py-2">إلغاء</button>
+                <button id="payConfirmBtn" class="w-full bg-green-600 text-white py-5 rounded-2xl font-black text-xl shadow-lg mt-4 disabled:bg-slate-300 transition">تأكيد الدفع</button>
+                <button onclick="togglePaymentModal(false)" class="w-full text-slate-400 font-bold py-2 hover:text-red-500 transition">إلغاء</button>
             </div>
         </div>
     </div>
 
     <!-- Hero -->
-    <section id="home" class="hero-gradient min-h-[70vh] flex items-center justify-center text-center text-white px-4">
+    <section id="home" class="hero-gradient min-h-[85vh] flex items-center justify-center text-center text-white px-4">
         <div class="max-w-3xl">
-            <h1 class="text-4xl md:text-6xl font-black mb-6 italic underline decoration-red-600">أكاديمية الأمة</h1>
-            <p class="text-xl text-slate-200 mb-8">نصنع أبطال الغد بمدربين محترفين ومرافق عالمية.</p>
+            <h1 class="text-5xl md:text-7xl font-black mb-6 italic">أكاديمية الأمة</h1>
+            <div class="h-1 w-24 bg-red-600 mx-auto mb-6"></div>
+            <p class="text-xl md:text-2xl text-slate-200 mb-10 font-light">نصنع أبطال الغد بمدربين محترفين ومرافق رياضية متطورة.</p>
             <div class="flex flex-wrap justify-center gap-4">
-                <a href="#booking" class="bg-red-600 hover:bg-red-700 px-8 py-3 rounded-2xl font-black transition">حجز ملعب</a>
-                <a href="#academy" class="bg-white text-indigo-900 px-8 py-3 rounded-2xl font-black transition">تسجيل لاعب</a>
+                <a href="#booking" class="bg-red-600 hover:bg-red-700 px-10 py-4 rounded-2xl font-black transition-all transform hover:scale-105 shadow-xl">حجز الملعب</a>
+                <a href="#academy" class="bg-white text-indigo-900 hover:bg-slate-100 px-10 py-4 rounded-2xl font-black transition-all transform hover:scale-105 shadow-xl">تسجيل لاعب</a>
             </div>
         </div>
     </section>
 
     <!-- Academy Registration -->
-    <section id="academy" class="py-20 px-4 bg-indigo-50">
+    <section id="academy" class="py-24 px-4 bg-indigo-50">
         <div class="container mx-auto max-w-4xl">
-            <div class="bg-white rounded-[3rem] shadow-xl overflow-hidden border border-indigo-100 flex flex-col md:flex-row">
-                <div class="md:w-2/5 bg-indigo-900 p-10 text-white">
-                    <h2 class="text-3xl font-black mb-6 italic">انضم إلينا</h2>
-                    <ul class="space-y-4 text-indigo-100 text-sm">
-                        <li><i class="fas fa-check-circle ml-2 text-green-400"></i> تدريبات يومية مكثفة</li>
-                        <li><i class="fas fa-check-circle ml-2 text-green-400"></i> أرشيف فيديوهات لكل لاعب</li>
-                        <li><i class="fas fa-check-circle ml-2 text-green-400"></i> مدربون معتمدون دولياً</li>
-                        <li><i class="fas fa-check-circle ml-2 text-green-400"></i> مباريات ودية أسبوعية</li>
+            <div class="bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-indigo-100 flex flex-col md:flex-row">
+                <div class="md:w-2/5 bg-indigo-900 p-12 text-white flex flex-col justify-center">
+                    <h2 class="text-3xl font-black mb-8 italic">انضم للأكاديمية</h2>
+                    <ul class="space-y-6 text-indigo-100">
+                        <li class="flex items-center"><i class="fas fa-check-circle ml-3 text-green-400"></i> تدريبات يومية مكثفة</li>
+                        <li class="flex items-center"><i class="fas fa-check-circle ml-3 text-green-400"></i> أرشيف فيديوهات لكل لاعب</li>
+                        <li class="flex items-center"><i class="fas fa-check-circle ml-3 text-green-400"></i> مدربون معتمدون</li>
+                        <li class="flex items-center"><i class="fas fa-check-circle ml-3 text-green-400"></i> مباريات ودية أسبوعية</li>
                     </ul>
                 </div>
-                <div class="md:w-3/5 p-10">
-                    <h3 class="text-2xl font-black mb-6 text-indigo-900">بيانات اللاعب الجديد</h3>
-                    <div class="grid gap-4">
-                        <input type="text" id="playerName" placeholder="اسم اللاعب بالكامل" class="w-full p-4 rounded-xl border bg-slate-50">
-                        <input type="number" id="playerAge" placeholder="العمر" class="w-full p-4 rounded-xl border bg-slate-50">
-                        <input type="tel" id="playerParentPhone" placeholder="رقم هاتف ولي الأمر" class="w-full p-4 rounded-xl border bg-slate-50">
-                        <select id="playerLevel" class="w-full p-4 rounded-xl border bg-slate-50">
-                            <option value="beginner">مبتدئ</option>
-                            <option value="intermediate">متوسط</option>
-                            <option value="advanced">متقدم</option>
-                        </select>
-                        <button onclick="window.startPayment('player')" class="bg-indigo-900 text-white py-4 rounded-2xl font-black mt-4 shadow-lg hover:bg-indigo-800 transition">التسجيل والدفع</button>
+                <div class="md:w-3/5 p-12">
+                    <h3 class="text-2xl font-black mb-8 text-indigo-900">بيانات اللاعب الجديد</h3>
+                    <div class="grid gap-5">
+                        <div class="space-y-1">
+                            <label class="text-sm font-bold text-slate-500 mr-1">اسم اللاعب</label>
+                            <input type="text" id="playerName" placeholder="الاسم الكامل" class="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 ring-indigo-500 outline-none">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <label class="text-sm font-bold text-slate-500 mr-1">العمر</label>
+                                <input type="number" id="playerAge" placeholder="مثال: 12" class="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 ring-indigo-500 outline-none">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-sm font-bold text-slate-500 mr-1">المستوى</label>
+                                <select id="playerLevel" class="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 ring-indigo-500 outline-none">
+                                    <option value="beginner">مبتدئ</option>
+                                    <option value="intermediate">متوسط</option>
+                                    <option value="advanced">متقدم</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-sm font-bold text-slate-500 mr-1">هاتف ولي الأمر</label>
+                            <input type="tel" id="playerParentPhone" placeholder="05xxxxxxxx" class="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 ring-indigo-500 outline-none">
+                        </div>
+                        <button id="registerPlayerBtn" class="bg-indigo-900 text-white py-5 rounded-2xl font-black mt-4 shadow-lg hover:bg-indigo-800 transition transform hover:-translate-y-1">التسجيل والاشتراك</button>
                     </div>
                 </div>
             </div>
@@ -171,47 +204,102 @@
     </section>
 
     <!-- Booking Section -->
-    <section id="booking" class="py-20 px-4">
+    <section id="booking" class="py-24 px-4 bg-white">
         <div class="container mx-auto max-w-5xl">
-            <div class="bg-white rounded-[3rem] shadow-xl p-8 md:p-12 border border-slate-100">
-                <h2 class="text-3xl font-black text-center mb-10 italic text-indigo-900">احجز ملعبك الآن</h2>
-                <div class="grid md:grid-cols-2 gap-12 text-right">
-                    <div class="space-y-4">
-                        <label class="block font-bold text-slate-700">التاريخ:</label>
-                        <input type="date" id="targetDate" onchange="window.checkAvailability()" class="w-full p-4 rounded-xl border bg-slate-50">
-                        <input type="text" id="resName" placeholder="اسم صاحب الحجز" class="w-full p-4 rounded-xl border bg-slate-50">
-                        <input type="tel" id="resPhone" placeholder="رقم الهاتف" class="w-full p-4 rounded-xl border bg-slate-50">
+            <div class="bg-white rounded-[3rem] shadow-2xl p-8 md:p-16 border border-slate-100">
+                <div class="text-center mb-12">
+                    <h2 class="text-4xl font-black text-indigo-900 mb-4 italic">احجز ملعبك</h2>
+                    <p class="text-slate-500">اختر الموعد المناسب لفريقك وسدد الحجز إلكترونياً</p>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-16 text-right">
+                    <div class="space-y-6">
+                        <div class="space-y-2">
+                            <label class="block font-black text-slate-700">تاريخ الحجز:</label>
+                            <input type="date" id="targetDate" class="w-full p-5 rounded-2xl border border-slate-200 bg-slate-50 focus:ring-2 ring-indigo-500 outline-none font-bold text-indigo-900">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block font-black text-slate-700">اسم صاحب الحجز:</label>
+                            <input type="text" id="resName" placeholder="مثال: محمد أحمد" class="w-full p-5 rounded-2xl border border-slate-200 bg-slate-50 focus:ring-2 ring-indigo-500 outline-none">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block font-black text-slate-700">رقم الهاتف:</label>
+                            <input type="tel" id="resPhone" placeholder="05xxxxxxxx" class="w-full p-5 rounded-2xl border border-slate-200 bg-slate-50 focus:ring-2 ring-indigo-500 outline-none">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-4">الساعات المتاحة:</label>
-                        <div id="timeGrid" class="grid grid-cols-2 gap-2 text-sm">
-                            <p class="col-span-2 text-slate-400 text-center py-10">اختر التاريخ أولاً</p>
+                    
+                    <div class="booking-section">
+                        <h3>الساعات المتاحة المسائية</h3>
+                        <div id="time-slots-container" class="slots-grid">
+                            <div class="col-span-full text-center py-12 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+                                <i class="fas fa-calendar-day text-4xl text-slate-300 mb-3 block"></i>
+                                <p class="text-slate-400 italic">يرجى اختيار تاريخ أولاً</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <button onclick="window.startPayment('booking')" class="w-full mt-10 bg-red-600 text-white py-5 rounded-2xl font-black text-xl shadow-xl hover:bg-red-700 transition">انتقل للدفع وتأكيد الحجز</button>
+                
+                <button id="submitBookingBtn" class="w-full mt-12 bg-red-600 text-white py-6 rounded-3xl font-black text-2xl shadow-2xl hover:bg-red-700 transition transform hover:scale-[1.02] active:scale-95">تأكيد الحجز والدفع</button>
             </div>
         </div>
     </section>
 
     <!-- Archive Section -->
-    <section id="archive" class="py-20 px-4 bg-slate-900 text-white">
+    <section id="archive" class="py-24 px-4 bg-slate-950 text-white">
         <div class="container mx-auto max-w-6xl">
-            <h2 class="text-3xl font-black mb-12 italic border-r-4 border-red-600 pr-4">أرشيف الفيديوهات</h2>
-            <div class="grid md:grid-cols-3 gap-6" id="archiveGrid">
-                <div class="aspect-video bg-slate-800 rounded-2xl overflow-hidden relative group cursor-pointer">
-                    <img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80" class="w-full h-full object-cover opacity-50 group-hover:scale-110 transition duration-500">
+            <div class="flex items-center mb-16">
+                <div class="h-10 w-2 bg-red-600 ml-4"></div>
+                <h2 class="text-4xl font-black italic">أرشيف الفيديوهات</h2>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8" id="archiveGrid">
+                <!-- Video Item 1 -->
+                <div class="aspect-video bg-slate-900 rounded-3xl overflow-hidden relative group cursor-pointer border border-slate-800">
+                    <img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&q=80" class="w-full h-full object-cover opacity-40 group-hover:scale-110 transition duration-700">
                     <div class="absolute inset-0 flex items-center justify-center">
-                        <i class="fas fa-play text-4xl group-hover:scale-125 transition text-red-500"></i>
+                        <div class="w-16 h-16 bg-red-600/20 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-red-600 transition-colors">
+                            <i class="fas fa-play text-2xl text-white"></i>
+                        </div>
                     </div>
-                    <div class="absolute bottom-4 right-4 font-bold text-sm bg-black/50 px-3 py-1 rounded">مباراة الشباب - 01/01/2026</div>
+                    <div class="absolute bottom-6 right-6 font-bold text-sm bg-black/80 px-4 py-2 rounded-xl border border-white/10">مباراة الشباب - 01/01/2026</div>
+                </div>
+                <!-- Video Item 2 -->
+                <div class="aspect-video bg-slate-900 rounded-3xl overflow-hidden relative group cursor-pointer border border-slate-800">
+                    <img src="https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&q=80" class="w-full h-full object-cover opacity-40 group-hover:scale-110 transition duration-700">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="w-16 h-16 bg-red-600/20 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:bg-red-600 transition-colors">
+                            <i class="fas fa-play text-2xl text-white"></i>
+                        </div>
+                    </div>
+                    <div class="absolute bottom-6 right-6 font-bold text-sm bg-black/80 px-4 py-2 rounded-xl border border-white/10">تدريبات الحراس - 02/01/2026</div>
                 </div>
             </div>
         </div>
     </section>
 
-    <div id="toast" class="fixed bottom-5 left-5 bg-indigo-900 text-white px-8 py-4 rounded-2xl shadow-2xl transform translate-y-20 opacity-0 transition-all z-[2000]">
-        <p id="toastMsg" class="font-bold"></p>
+    <!-- Footer -->
+    <footer class="bg-indigo-950 text-indigo-200 py-12 px-4 border-t border-indigo-900">
+        <div class="container mx-auto text-center">
+            <div class="flex items-center justify-center mb-6">
+                 <span class="text-white font-black text-2xl">أكاديمية الأمة</span>
+            </div>
+            <p class="mb-6 opacity-60">جميع الحقوق محفوظة © 2026 | تطوير النظام المتكامل للأكاديمية</p>
+            <div class="flex justify-center gap-6 text-2xl">
+                <a href="#" class="hover:text-white transition"><i class="fab fa-instagram"></i></a>
+                <a href="#" class="hover:text-white transition"><i class="fab fa-snapchat"></i></a>
+                <a href="#" class="hover:text-white transition"><i class="fab fa-whatsapp"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-8 left-8 bg-indigo-900 text-white px-8 py-5 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] transform translate-y-32 opacity-0 transition-all duration-500 z-[2000] border border-indigo-400/20">
+        <div class="flex items-center gap-4">
+            <div class="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
+                <i class="fas fa-info-circle text-indigo-300"></i>
+            </div>
+            <p id="toastMsg" class="font-black"></p>
+        </div>
     </div>
 
     <script type="module">
@@ -219,20 +307,19 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // Firebase Configuration (Environment Provided)
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'ummah-academy-app-v2';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'ummah-academy-2026-final';
         
-        let db = null;
-        let auth = null;
-        let currentUser = null;
+        let db, auth, currentUser, currentUnsubscribe = null;
         let selectedTime = null;
         let pendingAction = null;
 
         const showToast = (msg) => {
             const t = document.getElementById('toast');
             document.getElementById('toastMsg').innerText = msg;
-            t.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => t.classList.add('translate-y-20', 'opacity-0'), 4000);
+            t.classList.remove('translate-y-32', 'opacity-0');
+            setTimeout(() => t.classList.add('translate-y-32', 'opacity-0'), 4000);
         };
 
         const hideLoading = () => {
@@ -243,6 +330,7 @@
             }
         };
 
+        // Firebase Initialization
         const initFirebase = async () => {
             try {
                 const app = initializeApp(firebaseConfig);
@@ -254,7 +342,7 @@
                     if(user) {
                         hideLoading();
                         const dateVal = document.getElementById('targetDate').value;
-                        if(dateVal) window.checkAvailability();
+                        if(dateVal) checkAvailability();
                     }
                 });
 
@@ -263,182 +351,214 @@
                 } else {
                     await signInAnonymously(auth);
                 }
-
             } catch (error) {
-                console.error("Firebase Initialization Error:", error);
+                console.error("Connection Error:", error);
                 hideLoading();
+                showToast("خطأ في الاتصال بالسحابة");
             }
         };
 
         initFirebase();
 
+        // Path Helpers (RULE 1)
         const getBookingCol = () => collection(db, 'artifacts', appId, 'public', 'data', 'bookings');
         const getPlayerCol = () => collection(db, 'artifacts', appId, 'public', 'data', 'players');
 
+        // Global Window Functions for Modals
         window.toggleAdminModal = (show) => document.getElementById('adminModal').style.display = show ? 'flex' : 'none';
         window.togglePaymentModal = (show) => document.getElementById('paymentModal').style.display = show ? 'flex' : 'none';
 
-        window.handleAdminLogin = () => {
-            const user = document.getElementById('adminUser').value;
-            const pass = document.getElementById('adminPass').value;
-            if(user === 'admin' && pass === 'ummah2026'){
-                document.getElementById('adminDashboard').classList.remove('hidden');
-                toggleAdminModal(false);
-                loadAdminData();
-            } else {
-                showToast("اسم المستخدم أو كلمة المرور غير صحيحة");
-            }
-        };
-
-        window.logoutAdmin = () => document.getElementById('adminDashboard').classList.add('hidden');
-
-        const loadAdminData = async () => {
+        // Check Availability Logic
+        const checkAvailability = () => {
             if(!db || !currentUser) return;
-            try {
-                const bSnap = await getDocs(getBookingCol());
-                const bCont = document.getElementById('adminBookingContent');
-                bCont.innerHTML = bSnap.empty ? '<p class="text-slate-400 text-center">لا توجد حجوزات</p>' : '';
-                bSnap.forEach(d => {
-                    const data = d.data();
-                    const div = document.createElement('div');
-                    div.className = "p-3 bg-slate-50 rounded-lg flex justify-between items-center text-xs mb-2 border";
-                    div.innerHTML = `<span>${data.date} | ${data.time} | ${data.name}</span><button onclick="window.deleteDoc('bookings', '${d.id}')" class="text-red-500 p-2"><i class="fas fa-trash"></i></button>`;
-                    bCont.appendChild(div);
-                });
 
-                const pSnap = await getDocs(getPlayerCol());
-                const pCont = document.getElementById('adminPlayerContent');
-                pCont.innerHTML = pSnap.empty ? '<p class="text-slate-400 text-center">لا يوجد لاعبين</p>' : '';
-                pSnap.forEach(d => {
-                    const data = d.data();
-                    const div = document.createElement('div');
-                    div.className = "p-3 bg-green-50 rounded-lg flex justify-between items-center text-xs mb-2 border border-green-100";
-                    div.innerHTML = `<span>اللاعب: ${data.name} | عمر: ${data.age}</span><button onclick="window.deleteDoc('players', '${d.id}')" class="text-red-500 p-2"><i class="fas fa-trash"></i></button>`;
-                    pCont.appendChild(div);
-                });
-            } catch (e) {
-                showToast("خطأ في جلب البيانات");
-            }
-        };
-
-        window.deleteDoc = async (type, id) => {
-            if(!confirm("هل أنت متأكد من حذف هذا السجل؟")) return;
-            try {
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', type, id));
-                loadAdminData();
-                showToast("تم الحذف بنجاح");
-            } catch (e) {
-                showToast("فشل الحذف");
-            }
-        };
-
-        window.startPayment = (type) => {
-            if(type === 'booking'){
-                if(!document.getElementById('resName').value || !selectedTime || !document.getElementById('targetDate').value) {
-                    return showToast("يرجى إكمال بيانات الحجز واختيار الساعة");
-                }
-                pendingAction = 'booking';
-            } else {
-                if(!document.getElementById('playerName').value || !document.getElementById('playerAge').value || !document.getElementById('playerParentPhone').value) {
-                    return showToast("يرجى إكمال بيانات اللاعب قبل الدفع");
-                }
-                pendingAction = 'player';
-            }
-            togglePaymentModal(true);
-        };
-
-        window.completeTransaction = async () => {
-            const btn = document.getElementById('payConfirmBtn');
-            if(!currentUser || !db) return showToast("يرجى الانتظار، جاري الربط مع الخادم...");
-
-            btn.disabled = true;
-            btn.innerText = "جاري الحفظ...";
-            
-            try {
-                if(pendingAction === 'booking'){
-                    await addDoc(getBookingCol(), {
-                        name: document.getElementById('resName').value,
-                        phone: document.getElementById('resPhone').value,
-                        date: document.getElementById('targetDate').value,
-                        time: selectedTime,
-                        type: 'stadium_booking',
-                        createdAt: serverTimestamp()
-                    });
-                    showToast("تم الحجز والدفع بنجاح!");
-                    document.getElementById('resName').value = "";
-                    selectedTime = null;
-                } else if(pendingAction === 'player'){
-                    await addDoc(getPlayerCol(), {
-                        name: document.getElementById('playerName').value,
-                        age: document.getElementById('playerAge').value,
-                        parentPhone: document.getElementById('playerParentPhone').value,
-                        level: document.getElementById('playerLevel').value,
-                        type: 'academy_registration',
-                        createdAt: serverTimestamp()
-                    });
-                    showToast("تم تسجيل اللاعب بنجاح!");
-                    document.getElementById('playerName').value = "";
-                }
-                
-                togglePaymentModal(false);
-                if(pendingAction === 'booking') window.checkAvailability();
-                
-            } catch (e) {
-                console.error(e);
-                showToast("حدث خطأ، تأكد من اتصالك بالإنترنت");
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "تأكيد الدفع";
-            }
-        };
-
-        window.checkAvailability = () => {
             const dateInput = document.getElementById('targetDate').value;
-            const grid = document.getElementById('timeGrid');
-            if(!dateInput) return;
+            const container = document.getElementById('time-slots-container');
             
-            grid.innerHTML = '<p class="col-span-2 text-center py-4 text-indigo-500 animate-pulse">جاري فحص المواعيد...</p>';
-            
-            if(!db || !currentUser) {
-                setTimeout(window.checkAvailability, 1000);
+            if(!dateInput) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+                        <i class="fas fa-calendar-day text-4xl text-slate-300 mb-3 block"></i>
+                        <p class="text-slate-400 italic">يرجى اختيار تاريخ أولاً</p>
+                    </div>`;
                 return;
             }
 
-            // Use onSnapshot for real-time and more reliable connection on GitHub Pages
-            const q = query(getBookingCol());
-            onSnapshot(q, (snap) => {
-                const bookedTimes = [];
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    if (data.date === dateInput) {
-                        bookedTimes.push(data.time);
-                    }
-                });
+            container.innerHTML = '<p class="col-span-full text-center py-10 text-indigo-500 animate-pulse font-black">جاري جلب المواعيد...</p>';
 
-                grid.innerHTML = '';
-                const hours = ["18:00", "19:00", "20:00", "21:00", "22:00", "23:00", "00:00"];
+            const hours = ["19:00", "20:00", "21:00", "22:00", "23:00", "00:00", "01:00"];
+            
+            if(currentUnsubscribe) currentUnsubscribe();
+
+            // Real-time listener (RULE 2)
+            const q = query(getBookingCol(), where("date", "==", dateInput));
+            
+            currentUnsubscribe = onSnapshot(q, (snapshot) => {
+                const bookedTimes = [];
+                snapshot.forEach(doc => bookedTimes.push(doc.data().time));
                 
+                container.innerHTML = '';
                 hours.forEach(time => {
                     const isBooked = bookedTimes.includes(time);
                     const btn = document.createElement('div');
-                    btn.className = `p-4 rounded-xl text-center font-bold transition duration-300 ${isBooked ? 'slot-booked' : 'slot-available hover:shadow-md'}`;
-                    btn.innerText = time;
-                    
+                    btn.className = `p-4 rounded-2xl text-center font-bold transition-all shadow-sm ${isBooked ? 'slot-booked' : 'slot-available'}`;
+                    btn.innerHTML = isBooked ? `<i class="fas fa-lock text-xs ml-1"></i> ${time}` : time;
+
                     if(!isBooked) {
+                        if(selectedTime === time) btn.classList.add('slot-selected');
                         btn.onclick = () => {
                             document.querySelectorAll('.slot-available').forEach(el => el.classList.remove('slot-selected'));
                             btn.classList.add('slot-selected');
                             selectedTime = time;
                         };
                     }
-                    grid.appendChild(btn);
+                    container.appendChild(btn);
                 });
-            }, (error) => {
-                console.error("Listener Error:", error);
-                grid.innerHTML = '<p class="col-span-2 text-red-500 text-center py-4">فشل جلب البيانات، يرجى تحديث الصفحة</p>';
+
+                if(hours.every(h => bookedTimes.includes(h))) {
+                    container.innerHTML += '<p class="col-span-full text-red-500 text-center text-sm font-bold mt-4">نعتذر، اليوم محجوز بالكامل</p>';
+                }
+            }, (err) => {
+                console.error(err);
+                container.innerHTML = '<p class="col-span-full text-red-400 text-center py-10">حدث خطأ في تحديث البيانات</p>';
             });
         };
 
+        document.getElementById('targetDate').addEventListener('change', () => {
+            selectedTime = null;
+            checkAvailability();
+        });
+
+        // Event Listeners for Forms
+        document.getElementById('submitBookingBtn').addEventListener('click', () => {
+            const name = document.getElementById('resName').value;
+            const date = document.getElementById('targetDate').value;
+            if(!name || !date || !selectedTime) return showToast("أكمل البيانات واختر موعداً");
+            pendingAction = 'booking';
+            togglePaymentModal(true);
+        });
+
+        document.getElementById('registerPlayerBtn').addEventListener('click', () => {
+            const name = document.getElementById('playerName').value;
+            const age = document.getElementById('playerAge').value;
+            if(!name || !age) return showToast("يرجى تعبئة بيانات اللاعب أولاً");
+            pendingAction = 'player';
+            togglePaymentModal(true);
+        });
+
+        // Payment Execution
+        document.getElementById('payConfirmBtn').addEventListener('click', async function() {
+            if(!currentUser) return showToast("مشكلة في المصادقة");
+            
+            this.disabled = true;
+            this.innerText = "جاري الحفظ...";
+
+            try {
+                if(pendingAction === 'booking') {
+                    await addDoc(getBookingCol(), {
+                        name: document.getElementById('resName').value,
+                        phone: document.getElementById('resPhone').value,
+                        date: document.getElementById('targetDate').value,
+                        time: selectedTime,
+                        createdAt: serverTimestamp(),
+                        uid: currentUser.uid
+                    });
+                    showToast("تم تأكيد الحجز بنجاح!");
+                    document.getElementById('resName').value = '';
+                    selectedTime = null;
+                } else {
+                    await addDoc(getPlayerCol(), {
+                        name: document.getElementById('playerName').value,
+                        age: document.getElementById('playerAge').value,
+                        level: document.getElementById('playerLevel').value,
+                        phone: document.getElementById('playerParentPhone').value,
+                        createdAt: serverTimestamp(),
+                        uid: currentUser.uid
+                    });
+                    showToast("تم تسجيل اللاعب في الأكاديمية!");
+                    document.getElementById('playerName').value = '';
+                }
+                togglePaymentModal(false);
+            } catch (e) {
+                console.error(e);
+                showToast("حدث خطأ أثناء إتمام العملية");
+            } finally {
+                this.disabled = false;
+                this.innerText = "تأكيد الدفع";
+            }
+        });
+
+        // Admin Auth & Functions
+        document.getElementById('adminLoginBtn').addEventListener('click', () => {
+            const u = document.getElementById('adminUser').value;
+            const p = document.getElementById('adminPass').value;
+            if(u === 'admin' && p === 'ummah2026') {
+                document.getElementById('adminDashboard').classList.remove('hidden');
+                toggleAdminModal(false);
+                loadAdminData();
+            } else {
+                showToast("كلمة المرور غير صحيحة");
+            }
+        });
+
+        window.logoutAdmin = () => document.getElementById('adminDashboard').classList.add('hidden');
+
+        const loadAdminData = async () => {
+            const bCont = document.getElementById('adminBookingContent');
+            const pCont = document.getElementById('adminPlayerContent');
+            
+            bCont.innerHTML = '<p class="text-center py-6 animate-pulse">جاري التحميل...</p>';
+            pCont.innerHTML = '<p class="text-center py-6 animate-pulse">جاري التحميل...</p>';
+
+            try {
+                // Fetch All (RULE 2: Filter in JS)
+                const [bSnap, pSnap] = await Promise.all([getDocs(getBookingCol()), getDocs(getPlayerCol())]);
+                
+                bCont.innerHTML = bSnap.empty ? '<p class="text-slate-400 text-center py-4">لا توجد حجوزات مستلمة</p>' : '';
+                bSnap.forEach(d => {
+                    const data = d.data();
+                    bCont.innerHTML += `
+                        <div class="p-5 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center group">
+                            <div class="text-sm">
+                                <div class="font-black text-indigo-900 mb-1">${data.date} <span class="text-red-600 ml-2">🕒 ${data.time}</span></div>
+                                <div class="text-slate-500 font-bold">${data.name} | 📱 ${data.phone || 'بدون هاتف'}</div>
+                            </div>
+                            <button onclick="window.deleteDocItem('bookings', '${d.id}')" class="w-10 h-10 flex items-center justify-center rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>`;
+                });
+
+                pCont.innerHTML = pSnap.empty ? '<p class="text-slate-400 text-center py-4">لا يوجد لاعبين مسجلين</p>' : '';
+                pSnap.forEach(d => {
+                    const data = d.data();
+                    pCont.innerHTML += `
+                        <div class="p-5 bg-green-50 border border-green-100 rounded-2xl flex justify-between items-center group">
+                            <div class="text-sm">
+                                <div class="font-black text-green-800 mb-1">${data.name}</div>
+                                <div class="text-green-600/70 font-bold text-xs">عمر: ${data.age} | مستوى: ${data.level} | 📱 ${data.phone || 'N/A'}</div>
+                            </div>
+                            <button onclick="window.deleteDocItem('players', '${d.id}')" class="w-10 h-10 flex items-center justify-center rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>`;
+                });
+            } catch (e) {
+                console.error(e);
+                showToast("فشل في مزامنة بيانات الإدارة");
+            }
+        };
+
+        window.deleteDocItem = async (col, id) => {
+            if(!confirm("سيتم حذف السجل من قاعدة البيانات بشكل نهائي. هل أنت متأكد؟")) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', col, id));
+                showToast("تم الحذف بنجاح");
+                loadAdminData();
+            } catch (e) {
+                showToast("فشل الحذف، راجع الصلاحيات");
+            }
+        };
     </script>
 </body>
 </html>
